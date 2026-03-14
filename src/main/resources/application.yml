@@ -1,12 +1,21 @@
 spring:
   application:
     name: knowledge-server
+
   ai:
     mcp:
-      enabled: true
+      server:
+        enabled: true
+        stdio: false
 
-server:
-  port: 8080
+
+
+  main:
+    web-application-type: servlet
+#    banner-mode: "off"
+#    log-startup-info: false
+
+
 
 knowledge-server:
   index:
@@ -33,7 +42,20 @@ knowledge-server:
     max-results: 100
     highlight-fragments: 3
 
+#logging:
+#  appender:
+#    console:
+#      target: System.err
+
+
+#  level:
+#      org.springframework.ai.mcp.server: WARN
+
+
 logging:
   level:
-    com.knowledge.server: DEBUG
-    org.apache.lucene: INFO
+    # 强制让 Spring 打印出所有它注册的 URL 映射
+    org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping: DEBUG
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: DEBUG
+    org.springframework.ai.mcp.server: DEBUG
+    com.knowledge.server.mcp: DEBUG

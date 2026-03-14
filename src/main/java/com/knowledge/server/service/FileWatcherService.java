@@ -67,7 +67,15 @@ public class FileWatcherService {
         running.set(false);
         watchers.values().forEach(this::closeQuietly);
         watchers.clear();
-        virtualThreadExecutor.shutdown();
+        try {
+            virtualThreadExecutor.shutdown();
+            if (!virtualThreadExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                virtualThreadExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            virtualThreadExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
         logger.info("File watcher stopped");
     }
 

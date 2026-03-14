@@ -6,6 +6,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 
 import com.knowledge.server.config.KnowledgeServerProperties;
 
+/**
+ * @author ryu
+ */
 @SpringBootApplication
 @EnableConfigurationProperties(KnowledgeServerProperties.class)
 public class KnowledgeServerApplication {

@@ -28,6 +28,9 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.QueryScorer;
+import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -156,18 +159,44 @@ public class LuceneIndexRepository {
             IndexSearcher searcher = new IndexSearcher(reader);
             searcher.setSimilarity(new BM25Similarity());
 
+            Highlighter highlighter = new Highlighter(
+                new SimpleHTMLFormatter("<em>", "</em>"),
+                new QueryScorer(query)
+            );
+
             TopDocs topDocs = searcher.search(query, maxResults);
             List<SearchResult> results = new ArrayList<>();
 
             for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-                org.apache.lucene.document.Document doc = searcher.doc(scoreDoc.doc);
+                org.apache.lucene.document.Document luceneDoc = searcher.doc(scoreDoc.doc);
+
+                String content = luceneDoc.get("content");
+                List<String> highlights = null;
+                if (content != null) {
+                    try {
+                        String bestFragment = highlighter.getBestFragment(analyzer, "content", content);
+                        if (bestFragment != null) {
+                            highlights = List.of(bestFragment);
+                        } else if (content.length() > 200) {
+                            highlights = List.of(content.substring(0, 200));
+                        } else {
+                            highlights = List.of(content);
+                        }
+                    } catch (Exception e) {
+                        if (content.length() > 200) {
+                            highlights = List.of(content.substring(0, 200));
+                        } else {
+                            highlights = List.of(content);
+                        }
+                    }
+                }
 
                 SearchResult result = new SearchResult(
-                    doc.get("id"),
-                    doc.get("filePath"),
-                    doc.get("fileName"),
+                    luceneDoc.get("id"),
+                    luceneDoc.get("filePath"),
+                    luceneDoc.get("fileName"),
                     scoreDoc.score,
-                    null
+                    highlights
                 );
                 results.add(result);
             }

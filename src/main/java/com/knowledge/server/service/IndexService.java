@@ -19,9 +19,9 @@ import com.knowledge.server.domain.IndexStats;
 import com.knowledge.server.repository.LuceneIndexRepository;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 @Service
-@EnableConfigurationProperties(KnowledgeServerProperties.class)
 public class IndexService {
 
     private static final Logger logger = LoggerFactory.getLogger(IndexService.class);
@@ -44,6 +44,19 @@ public class IndexService {
     public void init() {
         if (!properties.getIndex().getWatchPaths().isEmpty()) {
             initialIndex();
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        try {
+            indexingExecutor.shutdown();
+            if (!indexingExecutor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                indexingExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            indexingExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 
