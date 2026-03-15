@@ -1,0 +1,37 @@
+### --- Java & Maven --- ###
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+# 排除 Maven 的运行日志
+*.log
+
+### --- IntelliJ IDEA --- ###
+.idea/
+*.iml
+out/
+gen/
+
+
+### --- macOS (你正在使用的系统) --- ###
+.DS_Store
+.AppleDouble
+.LSOverride
+# 缩略图缓存
+._*
+
+### --- Lucene 索引 (针对你的项目) --- ###
+# 索引文件是运行生成的，绝对不要进 Git
+index/
+# 如果你改了路径，把对应的文件夹名也加上
+write.lock
+
+### --- 临时文件 & 敏感信息 --- ###
+*.tmp
+*.bak
+*.swp
+.env
+# Claude Code 可能生成的本地配置
+.claude.json
