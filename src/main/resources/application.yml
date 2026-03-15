@@ -1,12 +1,9 @@
 spring:
   application:
     name: knowledge-server
-  ai:
-    mcp:
-      enabled: true
 
-server:
-  port: 8080
+  main:
+    web-application-type: servlet
 
 knowledge-server:
   index:
@@ -36,4 +33,3 @@ knowledge-server:
 logging:
   level:
     com.knowledge.server: DEBUG
-    org.apache.lucene: INFO

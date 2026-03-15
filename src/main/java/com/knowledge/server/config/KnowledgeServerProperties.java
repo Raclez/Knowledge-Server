@@ -3,12 +3,9 @@ package com.knowledge.server.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 /**
  * @author ryu
  */
-@ConfigurationProperties(prefix = "knowledge-server")
 public class KnowledgeServerProperties {
 
     private IndexConfig index = new IndexConfig();
@@ -45,7 +42,8 @@ public class KnowledgeServerProperties {
         private List<String> supportedExtensions = List.of(
             ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".md", ".html"
         );
-        private long maxFileSize = 104857600; // 100MB
+        private long maxFileSize = 104857600;
+        private long streamingThreshold = 10485760;
         private int batchSize = 100;
 
         public String getPath() {
@@ -78,6 +76,14 @@ public class KnowledgeServerProperties {
 
         public void setMaxFileSize(long maxFileSize) {
             this.maxFileSize = maxFileSize;
+        }
+
+        public long getStreamingThreshold() {
+            return streamingThreshold;
+        }
+
+        public void setStreamingThreshold(long streamingThreshold) {
+            this.streamingThreshold = streamingThreshold;
         }
 
         public int getBatchSize() {

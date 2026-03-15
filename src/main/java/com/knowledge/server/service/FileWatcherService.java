@@ -10,27 +10,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.stereotype.Service;
 
 import com.knowledge.server.config.KnowledgeServerProperties;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-
-@Service
-@EnableConfigurationProperties(KnowledgeServerProperties.class)
 public class FileWatcherService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileWatcherService.class);
 
     private final KnowledgeServerProperties properties;
-    private final DocumentParserService documentParserService;
     private final IndexService indexService;
 
     private final Map<Path, WatchService> watchers = new ConcurrentHashMap<>();
@@ -39,15 +30,12 @@ public class FileWatcherService {
     private final ExecutorService virtualThreadExecutor;
 
     public FileWatcherService(KnowledgeServerProperties properties,
-                              DocumentParserService documentParserService,
                               IndexService indexService) {
         this.properties = properties;
-        this.documentParserService = documentParserService;
         this.indexService = indexService;
         this.virtualThreadExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
     }
 
-    @PostConstruct
     public void start() {
         if (properties.getIndex().getWatchPaths().isEmpty()) {
             logger.warn("No watch paths configured");
@@ -62,12 +50,19 @@ public class FileWatcherService {
         logger.info("File watcher started for paths: {}", properties.getIndex().getWatchPaths());
     }
 
-    @PreDestroy
     public void stop() {
         running.set(false);
         watchers.values().forEach(this::closeQuietly);
         watchers.clear();
-        virtualThreadExecutor.shutdown();
+        try {
+            virtualThreadExecutor.shutdown();
+            if (!virtualThreadExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                virtualThreadExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            virtualThreadExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
         logger.info("File watcher stopped");
     }
 
@@ -165,6 +160,9 @@ public class FileWatcherService {
         virtualThreadExecutor.submit(() -> {
             try {
                 Thread.sleep(debounceMs);
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
                 logger.info("Indexing file: {}", filePath);
                 indexService.indexFile(filePath);
             } catch (InterruptedException e) {

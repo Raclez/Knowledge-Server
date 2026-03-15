@@ -1,0 +1,61 @@
+# Maven
+### --- Java & Maven --- ###
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+# 排除 Maven 的运行日志
+*.log
+
+### --- IntelliJ IDEA --- ###
+.idea/
+*.iml
+out/
+gen/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.hpi
+*.jpi
+
+# IDE - IntelliJ
+.idea/
+*.iws
+*.iwl
+*.iml
+*.iproj
+out/
+
+# IDE - Eclipse
+.project
+.classpath
+.settings/
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*~
+
+
+
+# Logs
+*.log
+logs/
+
+# Application
+index/
+
+### --- 临时文件 & 敏感信息 --- ###
+*.tmp
+*.bak
+*.swp
+.env
+# Claude Code 可能生成的本地配置
+.claude.json

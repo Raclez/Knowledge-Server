@@ -8,15 +8,11 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.stereotype.Service;
 
 import com.knowledge.server.config.KnowledgeServerProperties;
 import com.knowledge.server.domain.SearchResult;
 import com.knowledge.server.repository.LuceneIndexRepository;
 
-@Service
-@EnableConfigurationProperties(KnowledgeServerProperties.class)
 public class SearchService {
 
     private static final Logger logger = LoggerFactory.getLogger(SearchService.class);

@@ -11,7 +11,6 @@ import java.util.HexFormat;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.IndexWriter;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -21,13 +20,11 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
 
 import com.knowledge.server.config.KnowledgeServerProperties;
 import com.knowledge.server.domain.Document;
 
-@Service
 public class DocumentParserService {
 
     private static final Logger logger = LoggerFactory.getLogger(DocumentParserService.class);
@@ -55,7 +52,7 @@ public class DocumentParserService {
         String contentType = tika.detect(filePath);
         String content;
 
-        if (fileSize > 10 * 1024 * 1024) {
+        if (fileSize > properties.getIndex().getStreamingThreshold()) {
             content = parseLargeFile(filePath);
         } else {
             content = parseSmallFile(filePath);
@@ -114,49 +111,6 @@ public class DocumentParserService {
         }
 
         return content.toString();
-    }
-
-    public void parseFileStreaming(Path filePath, IndexWriter indexWriter) throws Exception {
-        if (!Files.exists(filePath)) {
-            throw new IOException("File does not exist: " + filePath);
-        }
-
-        long fileSize = Files.size(filePath);
-        if (fileSize > properties.getIndex().getMaxFileSize()) {
-            throw new IOException("File too large: " + fileSize);
-        }
-
-        String contentType = tika.detect(filePath);
-        String id = generateDocumentId(filePath);
-
-        Runtime runtime = Runtime.getRuntime();
-        long startMemory = runtime.totalMemory() - runtime.freeMemory();
-
-        BodyContentHandler handler = new BodyContentHandler(-1);
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-
-        try (InputStream stream = Files.newInputStream(filePath)) {
-            parser.parse(stream, handler, metadata, context);
-        }
-
-        long endMemory = runtime.totalMemory() - runtime.freeMemory();
-        logger.info("Memory delta for {}: {} MB", filePath.getFileName(), (endMemory - startMemory) / 1024 / 1024);
-
-        org.apache.lucene.document.Document luceneDoc = new org.apache.lucene.document.Document();
-        luceneDoc.add(new StringField("id", id, Field.Store.YES));
-        luceneDoc.add(new StringField("filePath", filePath.toAbsolutePath().toString(), Field.Store.YES));
-        luceneDoc.add(new StringField("fileName", filePath.getFileName().toString(), Field.Store.YES));
-        luceneDoc.add(new StringField("contentType", contentType, Field.Store.YES));
-        luceneDoc.add(new TextField("content", handler.toString(), Field.Store.YES));
-        luceneDoc.add(new StringField("fileSize", String.valueOf(fileSize), Field.Store.YES));
-        luceneDoc.add(new StringField("lastModified", String.valueOf(Files.getLastModifiedTime(filePath).toMillis()), Field.Store.YES));
-        luceneDoc.add(new StringField("indexedAt", String.valueOf(Instant.now().toEpochMilli()), Field.Store.YES));
-
-        indexWriter.addDocument(luceneDoc);
-        indexWriter.commit();
-
-        logger.info("Streamed indexed file: {} ({} MB)", filePath.getFileName(), fileSize / 1024 / 1024);
     }
 
     public String parseFileContent(Path filePath) throws IOException, SAXException, TikaException {
