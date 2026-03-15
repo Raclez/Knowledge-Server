@@ -1,0 +1,8 @@
+enabled: true
+mode: STDIO
+name: knowledge-server
+version: 1.0.0
+type: SYNC
+request-timeout: 20000
+capabilities:
+  tool: true

@@ -60,4 +60,14 @@ public class SearchResult {
     public void setHighlights(List<String> highlights) {
         this.highlights = highlights;
     }
+
+    @Override
+    public String toString() {
+        return "SearchResult{" +
+                "fileName='" + fileName + '\'' +
+                ", filePath='" + filePath + '\'' +
+                ", score=" + score +
+                ", highlights=" + highlights +
+                '}';
+    }
 }

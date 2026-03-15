@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build (requires Java 21)
-JAVA_HOME=/Users/ryu/.jenv/versions/21.0.10 mvn clean install
+ mvn clean install
 
 # Run
 mvn spring-boot:run

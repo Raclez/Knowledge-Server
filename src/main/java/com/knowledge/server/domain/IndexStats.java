@@ -50,4 +50,15 @@ public class IndexStats {
     public void setLastUpdated(long lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
+
+    @Override
+    public String toString() {
+        return "IndexStats{" +
+                "totalDocuments=" + totalDocuments +
+                ", totalSizeBytes=" + totalSizeBytes +
+                ", totalSizeMB=" + String.format("%.2f", totalSizeBytes / 1024.0 / 1024.0) +
+                ", documentsByType=" + documentsByType +
+                ", lastUpdated=" + lastUpdated +
+                '}';
+    }
 }

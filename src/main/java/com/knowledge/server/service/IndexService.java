@@ -10,18 +10,12 @@ import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.stereotype.Service;
 
 import com.knowledge.server.config.KnowledgeServerProperties;
 import com.knowledge.server.domain.Document;
 import com.knowledge.server.domain.IndexStats;
 import com.knowledge.server.repository.LuceneIndexRepository;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-
-@Service
 public class IndexService {
 
     private static final Logger logger = LoggerFactory.getLogger(IndexService.class);
@@ -40,14 +34,12 @@ public class IndexService {
         this.indexingExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
     }
 
-    @PostConstruct
     public void init() {
         if (!properties.getIndex().getWatchPaths().isEmpty()) {
             initialIndex();
         }
     }
 
-    @PreDestroy
     public void shutdown() {
         try {
             indexingExecutor.shutdown();
@@ -61,16 +53,22 @@ public class IndexService {
     }
 
     public void initialIndex() {
-        for (String pathStr : properties.getIndex().getWatchPaths()) {
-            Path basePath = Path.of(pathStr);
-            if (Files.exists(basePath) && Files.isDirectory(basePath)) {
-                try {
-                    indexDirectory(basePath);
-                } catch (Exception e) {
-                    logger.error("Failed to initial index directory: {}", basePath, e);
-                }
+        properties.getIndex().getWatchPaths().forEach(pathStr -> {
+            try {
+                indexingExecutor.submit(() -> {
+                    Path basePath = Path.of(pathStr);
+                    if (Files.exists(basePath) && Files.isDirectory(basePath)) {
+                        try {
+                            indexDirectory(basePath);
+                        } catch (Exception e) {
+                            logger.error("Failed to initial index directory: {}", basePath, e);
+                        }
+                    }
+                }).get();
+            } catch (Exception e) {
+                logger.error("Failed to index path: {}", pathStr, e);
             }
-        }
+        });
     }
 
     public void indexDirectory(Path directory) throws IOException {
@@ -79,11 +77,22 @@ public class IndexService {
 
         logger.info("Found {} files to index in {}", files.size(), directory);
 
-        for (Path file : files) {
-            try {
-                indexFile(file);
-            } catch (Exception e) {
-                logger.error("Failed to index file: {}", file, e);
+        int batchSize = properties.getIndex().getBatchSize();
+        List<List<Path>> batches = new ArrayList<>();
+        for (int i = 0; i < files.size(); i += batchSize) {
+            batches.add(files.subList(i, Math.min(i + batchSize, files.size())));
+        }
+
+        for (List<Path> batch : batches) {
+            var futures = batch.stream()
+                .map(file -> indexingExecutor.submit(() -> indexFile(file)))
+                .toList();
+            for (var future : futures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    logger.error("Failed to index file", e);
+                }
             }
         }
     }
