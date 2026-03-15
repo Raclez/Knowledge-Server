@@ -69,7 +69,7 @@ public class KnowledgeServerApplication {
             logger.info("Shutdown complete");
         }));
 
-        McpServerConfig mcpServerConfig = new McpServerConfig(searchService, indexService, properties);
+        McpServerConfig mcpServerConfig = new McpServerConfig(searchService, indexService);
         mcpServerConfig.startMcpServer();
     }
 }
